@@ -2,11 +2,15 @@
   "use strict";
 
   const SERVER_ADDRESS = "127.0.0.1:25565";
+  const PUBLIC_STATUS_HOST = "mauritania-replies.tun.ply.gg";
   const STATUS_REFRESH_MS = 10_000;
   const IS_GITHUB_PAGES = location.hostname.endsWith(".github.io");
-  const STATUS_ENDPOINT = IS_GITHUB_PAGES
-    ? "http://127.0.0.1:8088/api/status"
-    : "/api/status";
+  const STATUS_ENDPOINTS = IS_GITHUB_PAGES
+    ? [
+        `https://api.mcstatus.io/v2/status/java/${PUBLIC_STATUS_HOST}`,
+        `https://api.mcsrvstat.us/3/${PUBLIC_STATUS_HOST}`
+      ]
+    : ["/api/status"];
   const byId = (id) => document.getElementById(id);
 
   const ui = {
@@ -233,7 +237,7 @@
     if (ui.statusDetail) {
       ui.statusDetail.textContent = location.protocol === "file:"
         ? "动态接口未启动 · 请双击 website/启动官网.bat"
-        : "状态接口暂时无法连接 · 10 秒后自动重试";
+        : "公开状态接口暂时不可用 · 10 秒后自动重试";
     }
   };
 
@@ -244,14 +248,21 @@
     const timeout = setTimeout(() => controller.abort(), 5000);
 
     try {
-      const separator = STATUS_ENDPOINT.includes("?") ? "&" : "?";
-      const response = await fetch(`${STATUS_ENDPOINT}${separator}t=${Date.now()}`, {
-        cache: "no-store",
-        signal: controller.signal,
-        headers: { Accept: "application/json" }
-      });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      applyStatus(normalizeStatus(await response.json()));
+      const results = await Promise.allSettled(STATUS_ENDPOINTS.map(async (endpoint) => {
+        const separator = endpoint.includes("?") ? "&" : "?";
+        const response = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+          headers: { Accept: "application/json" }
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return normalizeStatus(await response.json());
+      }));
+      const statuses = results
+        .filter((result) => result.status === "fulfilled")
+        .map((result) => result.value);
+      if (statuses.length === 0) throw new Error("status unavailable");
+      applyStatus(statuses.find((status) => status.online) || statuses[0]);
     } catch {
       showConnectionError();
     } finally {
