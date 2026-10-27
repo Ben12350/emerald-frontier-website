@@ -1,11 +1,12 @@
 (() => {
   "use strict";
 
-  const SERVER_ADDRESS = "mauritania-replies.tun.ply.gg";
+  const SERVER_DOMAIN = "mauritania-replies.tun.ply.gg";
+  const SERVER_ADDRESS = `${SERVER_DOMAIN}:16455`;
   const STATUS_REFRESH_MS = 10_000;
   const IS_GITHUB_PAGES = location.hostname.endsWith(".github.io");
   const STATUS_ENDPOINT = IS_GITHUB_PAGES
-    ? `https://api.mcsrvstat.us/3/${encodeURIComponent(SERVER_ADDRESS)}`
+    ? `https://api.mcsrvstat.us/3/${encodeURIComponent(SERVER_DOMAIN)}`
     : "/api/status";
   const byId = (id) => document.getElementById(id);
 
