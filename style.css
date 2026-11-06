@@ -476,6 +476,8 @@
     .stat strong.is-offline { color: var(--danger) !important; }
     .stat strong.is-warning { color: var(--gold) !important; }
     .stat strong.is-loading { color: #8ca79b !important; animation: soft-pulse 1.4s ease-in-out infinite; }
+    #backup-age.is-warning { color: var(--gold) !important; }
+    #backup-age.is-offline { color: var(--danger) !important; }
 
     @keyframes soft-pulse {
       0%, 100% { opacity: .45; }

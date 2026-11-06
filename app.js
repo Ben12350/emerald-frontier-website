@@ -26,6 +26,7 @@
     serverMspt: byId("server-mspt"),
     serverState: byId("server-state"),
     backupAge: byId("backup-age"),
+    backupStat: byId("backup-stat"),
     telemetry: byId("telemetry"),
     perfChart: byId("perf-chart"),
     chartTps: byId("chart-tps"),
@@ -254,6 +255,7 @@
     );
 
     if (ui.backupAge) {
+      ui.backupAge.classList.remove("is-warning", "is-offline");
       const backup = data.lastBackup;
       if (!backup?.modifiedAt) {
         ui.backupAge.textContent = "尚未备份";
@@ -271,6 +273,11 @@
             : ageMinutes < 1440
               ? `${Math.floor(ageMinutes / 60)} 小时前`
               : `${Math.floor(ageMinutes / 1440)} 天前`;
+        if (ageMinutes > 720) {
+          ui.backupAge.classList.add("is-offline");
+        } else if (ageMinutes > 420) {
+          ui.backupAge.classList.add("is-warning");
+        }
         const sizeMb = (Number(backup.bytes) || 0) / 1024 / 1024;
         const checksum = backup.sha256
           ? `SHA-256 ${backup.sha256.slice(0, 12)}…`
@@ -359,6 +366,10 @@
   });
   window.addEventListener("online", startStatusUpdates);
   window.addEventListener("offline", showConnectionError);
+
+  if (IS_GITHUB_PAGES && ui.backupStat) {
+    ui.backupStat.hidden = true;
+  }
 
   const historyPoints = [];
   const chartCanvas = ui.perfChart;
