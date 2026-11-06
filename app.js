@@ -97,19 +97,24 @@
   let particles = [];
   let viewportWidth = 0;
   let viewportHeight = 0;
+  let particleFrame = 0;
+  let lastParticleTime = 0;
 
   const resizeParticles = () => {
     if (!canvas || !context) return;
-    const ratio = Math.min(window.devicePixelRatio || 1, 2);
     viewportWidth = window.innerWidth;
     viewportHeight = window.innerHeight;
+    const compact = viewportWidth <= 720;
+    const ratio = Math.min(window.devicePixelRatio || 1, compact ? 1.5 : 2);
     canvas.width = viewportWidth * ratio;
     canvas.height = viewportHeight * ratio;
     canvas.style.width = `${viewportWidth}px`;
     canvas.style.height = `${viewportHeight}px`;
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    const particleLimit = compact ? 24 : 52;
+    const particleSpacing = compact ? 24 : 22;
     particles = Array.from(
-      { length: Math.min(52, Math.floor(viewportWidth / 22)) },
+      { length: Math.min(particleLimit, Math.floor(viewportWidth / particleSpacing)) },
       () => ({
         x: Math.random() * viewportWidth,
         y: Math.random() * viewportHeight,
@@ -122,11 +127,18 @@
   };
 
   const drawParticles = () => {
+    particleFrame = 0;
     if (!context) return;
+    if (document.visibilityState === "hidden") return;
+    const now = performance.now();
+    const delta = lastParticleTime
+      ? Math.min((now - lastParticleTime) / 16.667, 2)
+      : 1;
+    lastParticleTime = now;
     context.clearRect(0, 0, viewportWidth, viewportHeight);
     particles.forEach((particle) => {
-      particle.y -= particle.speed;
-      particle.x += Math.sin((particle.y + particle.size) * 0.01) * 0.08;
+      particle.y -= particle.speed * delta;
+      particle.x += Math.sin((particle.y + particle.size) * 0.01) * 0.08 * delta;
       if (particle.y < -5) {
         particle.y = viewportHeight + 5;
         particle.x = Math.random() * viewportWidth;
@@ -136,12 +148,33 @@
         : `rgba(67,245,161,${particle.alpha})`;
       context.fillRect(particle.x, particle.y, particle.size, particle.size);
     });
-    if (!reducedMotion) requestAnimationFrame(drawParticles);
+    if (!reducedMotion && document.visibilityState === "visible") {
+      particleFrame = requestAnimationFrame(drawParticles);
+    }
+  };
+
+  const startParticles = () => {
+    if (reducedMotion || particleFrame || document.visibilityState === "hidden") return;
+    lastParticleTime = 0;
+    particleFrame = requestAnimationFrame(drawParticles);
+  };
+
+  const stopParticles = () => {
+    if (!particleFrame) return;
+    cancelAnimationFrame(particleFrame);
+    particleFrame = 0;
   };
 
   resizeParticles();
-  drawParticles();
-  window.addEventListener("resize", resizeParticles, { passive: true });
+  if (reducedMotion) {
+    drawParticles();
+  } else {
+    startParticles();
+  }
+  window.addEventListener("resize", () => {
+    resizeParticles();
+    if (reducedMotion) drawParticles();
+  }, { passive: true });
 
   const toneFor = (data) => {
     if (!data.online) return "offline";
@@ -421,7 +454,14 @@
   };
 
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") refreshStatus();
+    if (document.visibilityState === "hidden") {
+      stopParticles();
+      clearInterval(statusTimer);
+      statusTimer = undefined;
+      return;
+    }
+    startParticles();
+    startStatusUpdates();
   });
   window.addEventListener("online", startStatusUpdates);
   window.addEventListener("offline", showConnectionError);
