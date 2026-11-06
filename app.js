@@ -376,7 +376,7 @@
     if (statusRequest) statusRequest.abort();
     const controller = new AbortController();
     statusRequest = controller;
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    const timeout = setTimeout(() => controller.abort(), 9000);
 
     try {
       const results = await Promise.allSettled(STATUS_ENDPOINTS.map(async (endpoint) => {
