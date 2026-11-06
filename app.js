@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SERVER_ADDRESS = "192.168.101.17:25565";
+  const SERVER_ADDRESS = "mauritania-replies.tun.ply.gg";
   const PUBLIC_STATUS_HOST = "mauritania-replies.tun.ply.gg";
   const STATUS_REFRESH_MS = 10_000;
   const IS_GITHUB_PAGES = location.hostname.endsWith(".github.io");
