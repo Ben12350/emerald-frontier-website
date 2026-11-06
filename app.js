@@ -199,8 +199,12 @@
     const tone = toneFor(data);
     const online = Math.max(0, Number(data.onlinePlayers) || 0);
     const maximum = Math.max(1, Number(data.maxPlayers) || 500);
-    const tps = Number(data.tps);
-    const mspt = Number(data.mspt);
+    const tps = data.tps === null || data.tps === undefined || data.tps === ""
+      ? NaN
+      : Number(data.tps);
+    const mspt = data.mspt === null || data.mspt === undefined || data.mspt === ""
+      ? NaN
+      : Number(data.mspt);
     const formattedTps = Number.isFinite(tps) ? tps.toFixed(1) : "--";
     const formattedMspt = Number.isFinite(mspt) ? mspt.toFixed(1) : "--";
 
