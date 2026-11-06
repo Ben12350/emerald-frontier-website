@@ -30,7 +30,10 @@
     perfChart: byId("perf-chart"),
     chartTps: byId("chart-tps"),
     chartMspt: byId("chart-mspt"),
-    chartPlayers: byId("chart-players")
+    chartPlayers: byId("chart-players"),
+    systemLoad: byId("system-load"),
+    systemMemory: byId("system-memory"),
+    systemDisk: byId("system-disk")
   };
 
   let toastTimer;
@@ -226,6 +229,24 @@
       }
     }
 
+    const hostSystem = data.system;
+    if (ui.systemLoad) {
+      ui.systemLoad.textContent = Number.isFinite(Number(hostSystem?.load1))
+        ? Number(hostSystem.load1).toFixed(2)
+        : "--";
+    }
+    if (ui.systemMemory) {
+      ui.systemMemory.textContent = Number.isFinite(Number(hostSystem?.memoryUsedPercent))
+        ? `${Number(hostSystem.memoryUsedPercent).toFixed(1)}%`
+        : "--";
+    }
+    if (ui.systemDisk) {
+      const freeGb = Number(hostSystem?.diskFreeBytes) / 1024 / 1024 / 1024;
+      ui.systemDisk.textContent = Number.isFinite(freeGb) && freeGb >= 0
+        ? `${freeGb.toFixed(1)} GB`
+        : "--";
+    }
+
     document.documentElement.dataset.serverState = tone;
     updateLastRefresh(
       data.checkedAt ? new Date(data.checkedAt) : new Date(),
@@ -273,6 +294,7 @@
       tps: null,
       mspt: null,
       lastBackup: null,
+      system: null,
       checkedAt: new Date().toISOString()
     };
   };
