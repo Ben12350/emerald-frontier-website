@@ -37,7 +37,8 @@
     chartPlayers: byId("chart-players"),
     systemLoad: byId("system-load"),
     systemMemory: byId("system-memory"),
-    systemDisk: byId("system-disk")
+    systemDisk: byId("system-disk"),
+    hostDisk: byId("host-disk")
   };
 
   let toastTimer;
@@ -239,6 +240,13 @@
       } else {
         ui.statusDetail.textContent = `运行正常 · ${online} 人在线 · TPS ${formattedTps} · MSPT ${formattedMspt} · 最大 ${maximum} 人`;
       }
+    }
+    if (ui.hostDisk) {
+      const hostFreeGb = Number(data.offsiteBackup?.hostDiskFreeBytes)
+        / 1024 / 1024 / 1024;
+      ui.hostDisk.textContent = Number.isFinite(hostFreeGb) && hostFreeGb >= 0
+        ? `${hostFreeGb.toFixed(1)} GB`
+        : "--";
     }
 
     const hostSystem = data.system;
