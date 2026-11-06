@@ -309,9 +309,13 @@
         const checksum = offsite.sha256
           ? `SHA-256 ${offsite.sha256.slice(0, 12)}…`
           : "尚无校验值";
+        const intervalMinutes = Math.max(
+          1,
+          Math.round((Number(offsite.checkIntervalSeconds) || 300) / 60)
+        );
         ui.offsiteBackupState.title =
           `${offsite.name} · ${sizeMb.toFixed(1)} MB · ${checksum} · ` +
-          `独立副本 ${replicas} 份`;
+          `独立副本 ${replicas} 份 · 每 ${intervalMinutes} 分钟巡检`;
       }
     }
   };
