@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const SERVER_ADDRESS = "127.0.0.1:25565";
+  const SERVER_ADDRESS = "192.168.101.17:25565";
   const PUBLIC_STATUS_HOST = "mauritania-replies.tun.ply.gg";
   const STATUS_REFRESH_MS = 10_000;
   const IS_GITHUB_PAGES = location.hostname.endsWith(".github.io");
@@ -23,7 +23,14 @@
     heroOnline: byId("hero-online"),
     playerCount: byId("player-count"),
     serverTps: byId("server-tps"),
-    serverState: byId("server-state")
+    serverMspt: byId("server-mspt"),
+    serverState: byId("server-state"),
+    backupAge: byId("backup-age"),
+    telemetry: byId("telemetry"),
+    perfChart: byId("perf-chart"),
+    chartTps: byId("chart-tps"),
+    chartMspt: byId("chart-mspt"),
+    chartPlayers: byId("chart-players")
   };
 
   let toastTimer;
@@ -147,11 +154,14 @@
     if (tone === "loading") element.classList.add("is-loading");
   };
 
-  const updateLastRefresh = (date = new Date()) => {
+  const updateLastRefresh = (date = new Date(), latency = null) => {
     if (!ui.lastUpdate) return;
-    ui.lastUpdate.textContent = `${date.toLocaleTimeString("zh-CN", {
+    const clock = date.toLocaleTimeString("zh-CN", {
       hour12: false
-    })} 自动更新`;
+    });
+    ui.lastUpdate.textContent = latency === null
+      ? `${clock} 自动更新`
+      : `${clock} · 响应 ${Math.round(latency)} ms`;
   };
 
   const showLoading = () => {
@@ -161,9 +171,15 @@
     if (ui.statusDetail) ui.statusDetail.textContent = "正在连接服务器状态接口……";
     setValueTone(ui.serverState, "loading");
     setValueTone(ui.serverTps, "loading");
+    setValueTone(ui.serverMspt, "loading");
     setValueTone(ui.playerCount, "loading");
     if (ui.serverState) ui.serverState.textContent = "检测中";
     if (ui.serverTps) ui.serverTps.textContent = "--";
+    if (ui.serverMspt) ui.serverMspt.textContent = "--";
+    if (ui.backupAge) {
+      ui.backupAge.textContent = "--";
+      ui.backupAge.title = "正在读取最近备份";
+    }
     if (ui.playerCount) ui.playerCount.textContent = "-- / 500";
     if (ui.heroOnline) ui.heroOnline.textContent = "--";
   };
@@ -173,12 +189,15 @@
     const online = Math.max(0, Number(data.onlinePlayers) || 0);
     const maximum = Math.max(1, Number(data.maxPlayers) || 500);
     const tps = Number(data.tps);
+    const mspt = Number(data.mspt);
     const formattedTps = Number.isFinite(tps) ? tps.toFixed(1) : "--";
+    const formattedMspt = Number.isFinite(mspt) ? mspt.toFixed(1) : "--";
 
     setTone(ui.statusPill, tone);
     setTone(ui.liveStrip, tone);
     setValueTone(ui.playerCount, tone);
     setValueTone(ui.serverTps, tone);
+    setValueTone(ui.serverMspt, tone);
     setValueTone(ui.serverState, tone);
 
     if (ui.statusText) {
@@ -190,6 +209,7 @@
     if (ui.playerCount) ui.playerCount.textContent = `${online} / ${maximum}`;
     if (ui.heroOnline) ui.heroOnline.textContent = String(online);
     if (ui.serverTps) ui.serverTps.textContent = tone === "offline" ? "--" : formattedTps;
+    if (ui.serverMspt) ui.serverMspt.textContent = tone === "offline" ? "--" : formattedMspt;
     if (ui.serverState) {
       ui.serverState.textContent = tone === "offline"
         ? "未开放"
@@ -200,14 +220,45 @@
       if (tone === "offline") {
         ui.statusDetail.textContent = "服务器当前未开放 · 启动服务端后本页会自动刷新";
       } else if (tone === "warning") {
-        ui.statusDetail.textContent = `监控发现卡顿或异常网络 · ${online} 人在线 · TPS ${formattedTps}`;
+        ui.statusDetail.textContent = `监控发现卡顿或异常网络 · ${online} 人在线 · TPS ${formattedTps} · MSPT ${formattedMspt}`;
       } else {
-        ui.statusDetail.textContent = `运行正常 · ${online} 人在线 · TPS ${formattedTps} · 最大 ${maximum} 人`;
+        ui.statusDetail.textContent = `运行正常 · ${online} 人在线 · TPS ${formattedTps} · MSPT ${formattedMspt} · 最大 ${maximum} 人`;
       }
     }
 
     document.documentElement.dataset.serverState = tone;
-    updateLastRefresh(data.checkedAt ? new Date(data.checkedAt) : new Date());
+    updateLastRefresh(
+      data.checkedAt ? new Date(data.checkedAt) : new Date(),
+      data.requestLatency
+    );
+
+    if (ui.backupAge) {
+      const backup = data.lastBackup;
+      if (!backup?.modifiedAt) {
+        ui.backupAge.textContent = "尚未备份";
+        ui.backupAge.title = "备份目录中还没有一致性备份";
+      } else {
+        const changed = new Date(backup.modifiedAt);
+        const ageMinutes = Math.max(
+          0,
+          Math.floor((Date.now() - changed.getTime()) / 60_000)
+        );
+        ui.backupAge.textContent = ageMinutes < 2
+          ? "刚完成"
+          : ageMinutes < 60
+            ? `${ageMinutes} 分钟前`
+            : ageMinutes < 1440
+              ? `${Math.floor(ageMinutes / 60)} 小时前`
+              : `${Math.floor(ageMinutes / 1440)} 天前`;
+        const sizeMb = (Number(backup.bytes) || 0) / 1024 / 1024;
+        const checksum = backup.sha256
+          ? `SHA-256 ${backup.sha256.slice(0, 12)}…`
+          : "尚无校验文件";
+        ui.backupAge.title =
+          `${backup.name} · ${sizeMb.toFixed(1)} MB · ${checksum} · ` +
+          changed.toLocaleString("zh-CN", { hour12: false });
+      }
+    }
   };
 
   const normalizeStatus = (data) => {
@@ -221,6 +272,7 @@
       maxPlayers: Number(players.max) || 500,
       tps: null,
       mspt: null,
+      lastBackup: null,
       checkedAt: new Date().toISOString()
     };
   };
@@ -250,13 +302,16 @@
     try {
       const results = await Promise.allSettled(STATUS_ENDPOINTS.map(async (endpoint) => {
         const separator = endpoint.includes("?") ? "&" : "?";
+        const startedAt = performance.now();
         const response = await fetch(`${endpoint}${separator}t=${Date.now()}`, {
           cache: "no-store",
           signal: controller.signal,
           headers: { Accept: "application/json" }
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return normalizeStatus(await response.json());
+        const status = normalizeStatus(await response.json());
+        status.requestLatency = performance.now() - startedAt;
+        return status;
       }));
       const statuses = results
         .filter((result) => result.status === "fulfilled")
@@ -282,6 +337,111 @@
   });
   window.addEventListener("online", startStatusUpdates);
   window.addEventListener("offline", showConnectionError);
+
+  const historyPoints = [];
+  const chartCanvas = ui.perfChart;
+  const chartContext = chartCanvas?.getContext("2d");
+
+  const resizeChart = () => {
+    if (!chartCanvas || !chartContext) return;
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = chartCanvas.parentElement?.clientWidth || 800;
+    const height = 150;
+    chartCanvas.width = width * ratio;
+    chartCanvas.height = height * ratio;
+    chartCanvas.style.width = `${width}px`;
+    chartCanvas.style.height = `${height}px`;
+    chartContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+  };
+
+  const drawHistory = () => {
+    if (!chartCanvas || !chartContext) return;
+    const width = chartCanvas.clientWidth;
+    const height = chartCanvas.clientHeight;
+    chartContext.clearRect(0, 0, width, height);
+
+    chartContext.strokeStyle = "rgba(150,220,190,.1)";
+    chartContext.lineWidth = 1;
+    for (let row = 1; row < 4; row++) {
+      const y = (height / 4) * row;
+      chartContext.beginPath();
+      chartContext.moveTo(0, y);
+      chartContext.lineTo(width, y);
+      chartContext.stroke();
+    }
+
+    if (historyPoints.length < 2) {
+      chartContext.fillStyle = "rgba(194,255,228,.55)";
+      chartContext.font = "11px Microsoft YaHei UI";
+      chartContext.fillText("正在收集性能数据…", 12, height / 2);
+      return;
+    }
+
+    const drawSeries = (field, maximum, color, fillColor) => {
+      chartContext.beginPath();
+      historyPoints.forEach((point, index) => {
+        const value = Number(point[field]);
+        const normalized = Number.isFinite(value)
+          ? Math.max(0, Math.min(1, value / maximum))
+          : 0;
+        const x = (index / Math.max(1, historyPoints.length - 1)) * width;
+        const y = height - 12 - normalized * (height - 28);
+        if (index === 0) chartContext.moveTo(x, y);
+        else chartContext.lineTo(x, y);
+      });
+      chartContext.strokeStyle = color;
+      chartContext.lineWidth = 2;
+      chartContext.stroke();
+      chartContext.lineTo(width, height);
+      chartContext.lineTo(0, height);
+      chartContext.closePath();
+      chartContext.fillStyle = fillColor;
+      chartContext.fill();
+    };
+
+    drawSeries("tps", 20, "#43f5a1", "rgba(67,245,161,.09)");
+    drawSeries("mspt", 50, "#6fdcff", "rgba(111,220,255,.05)");
+  };
+
+  const refreshHistory = async () => {
+    if (!ui.telemetry || !chartCanvas) return;
+    if (IS_GITHUB_PAGES) {
+      ui.telemetry.hidden = true;
+      return;
+    }
+    try {
+      const response = await fetch(`/api/history?t=${Date.now()}`, {
+        cache: "no-store"
+      });
+      if (!response.ok) return;
+      const payload = await response.json();
+      historyPoints.splice(
+        0,
+        historyPoints.length,
+        ...(Array.isArray(payload.points) ? payload.points : [])
+      );
+      const latest = historyPoints.at(-1);
+      if (latest) {
+        if (ui.chartTps) ui.chartTps.textContent =
+          Number.isFinite(Number(latest.tps)) ? Number(latest.tps).toFixed(1) : "--";
+        if (ui.chartMspt) ui.chartMspt.textContent =
+          Number.isFinite(Number(latest.mspt)) ? Number(latest.mspt).toFixed(1) : "--";
+        if (ui.chartPlayers) ui.chartPlayers.textContent = String(latest.players ?? 0);
+      }
+      drawHistory();
+    } catch {
+      // The main status panel already reports connection problems.
+    }
+  };
+
+  resizeChart();
+  drawHistory();
+  new ResizeObserver(() => {
+    resizeChart();
+    drawHistory();
+  }).observe(ui.telemetry || document.body);
+  setInterval(refreshHistory, 5000);
+  refreshHistory();
 
   showLoading();
   updateLastRefresh();

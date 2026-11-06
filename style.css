@@ -433,7 +433,7 @@
 
     .stats {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       border-top: 1px solid var(--line);
       border-bottom: 1px solid var(--line);
       background: linear-gradient(90deg, rgba(30,83,63,.1), rgba(30,83,63,.24), rgba(30,83,63,.1));
@@ -470,6 +470,8 @@
 
     .stat:nth-child(2) strong { color: var(--gold); }
     .stat:nth-child(3) strong { color: var(--emerald); }
+    .stat:nth-child(4) strong { color: #6fdcff; }
+    .stat:nth-child(6) strong { color: var(--gold); }
     .stat strong { transition: color .25s ease; }
     .stat strong.is-offline { color: var(--danger) !important; }
     .stat strong.is-warning { color: var(--gold) !important; }
@@ -536,6 +538,70 @@
       color: #668177;
       font: 600 9px/1 ui-monospace, "Cascadia Code", monospace;
       white-space: nowrap;
+    }
+
+    .telemetry {
+      margin-top: 28px;
+      padding: 22px 24px 16px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background:
+        radial-gradient(circle at 90% 0, rgba(67,245,161,.08), transparent 28rem),
+        rgba(8, 25, 19, .62);
+      box-shadow: inset 0 1px rgba(255,255,255,.025);
+    }
+
+    .telemetry-head, .telemetry-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .telemetry-head > div:first-child span {
+      color: var(--muted);
+      font: 800 9px/1 ui-monospace, "Cascadia Code", monospace;
+      letter-spacing: .18em;
+    }
+
+    .telemetry-head strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 17px;
+      letter-spacing: -.02em;
+    }
+
+    .telemetry-legend {
+      display: flex;
+      gap: 16px;
+      color: var(--muted);
+      font: 700 10px/1 ui-monospace, "Cascadia Code", monospace;
+    }
+
+    .telemetry-legend span { display: flex; align-items: center; gap: 7px; }
+    .telemetry-legend i { width: 18px; height: 2px; background: var(--emerald); }
+    .telemetry-legend .mspt i { background: #6fdcff; }
+
+    .chart-wrap {
+      width: 100%;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+
+    #perf-chart { display: block; width: 100%; height: 150px; }
+
+    .telemetry-foot {
+      justify-content: flex-start;
+      gap: 24px;
+      margin-top: 8px;
+      color: #708e81;
+      font-size: 10px;
+    }
+
+    .telemetry-foot b {
+      margin-left: 6px;
+      color: var(--text);
+      font-family: ui-monospace, "Cascadia Code", monospace;
     }
 
     section { padding: 104px 0; }
@@ -891,7 +957,7 @@
       .island { width: min(360px, 84vw); }
       .hero-lede { font-size: 14px; }
       .stats { grid-template-columns: repeat(2, 1fr); }
-      .stat:nth-child(3)::before { display: none; }
+      .stat:nth-child(odd)::before { display: none; }
       .stat:nth-child(n+3) { border-top: 1px solid var(--line); }
       .feature-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
       .feature.hero-feature { grid-column: 1 / 3; grid-row: auto; min-height: 420px; }
@@ -931,6 +997,10 @@
       .stat span { font-size: 8px; }
       .live-strip { grid-template-columns: auto minmax(0, 1fr); gap: 12px; padding: 0 12px; }
       .live-updated { display: none; }
+      .telemetry { padding: 18px 14px 14px; }
+      .telemetry-head { align-items: flex-start; flex-direction: column; }
+      #perf-chart { height: 120px; }
+      .telemetry-foot { flex-wrap: wrap; gap: 10px 18px; }
       section { padding: 74px 0; }
       .feature-grid { grid-template-columns: 1fr; }
       .feature.hero-feature, .feature:last-child { grid-column: auto; }

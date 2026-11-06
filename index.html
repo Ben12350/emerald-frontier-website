@@ -58,7 +58,7 @@
                 <rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/>
                 <path d="M7 7h.01M7 17h.01"/>
               </svg>
-              <span id="server-ip">127.0.0.1:25565</span>
+              <span id="server-ip">192.168.101.17:25565</span>
             </div>
             <button class="copy-btn" id="copy-ip" type="button">复制地址</button>
           </div>
@@ -86,13 +86,36 @@
       <div class="stat"><strong>1.8—26.3</strong><span>JAVA 版本互通</span></div>
       <div class="stat"><strong id="player-count">-- / 500</strong><span>在线玩家 / 容量</span></div>
       <div class="stat"><strong id="server-tps">--</strong><span>实时服务器 TPS</span></div>
+      <div class="stat"><strong id="server-mspt">--</strong><span>服务器 MSPT</span></div>
       <div class="stat"><strong id="server-state">检测中</strong><span>实时运行状态</span></div>
+      <div class="stat"><strong id="backup-age">--</strong><span>最近自动备份</span></div>
     </div>
 
     <div class="live-strip shell" id="live-strip" data-state="loading" aria-live="polite">
       <span class="live-label"><i class="live-dot"></i> LIVE STATUS</span>
       <span class="live-detail" id="status-detail">正在连接服务器状态接口……</span>
       <span class="live-updated" id="last-update">等待首次更新</span>
+    </div>
+
+    <div class="telemetry shell" id="telemetry">
+      <div class="telemetry-head">
+        <div>
+          <span>120 SECOND TELEMETRY</span>
+          <strong>实时性能趋势</strong>
+        </div>
+        <div class="telemetry-legend">
+          <span class="tps"><i></i>TPS</span>
+          <span class="mspt"><i></i>MSPT</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="perf-chart" aria-label="最近两分钟 TPS 和 MSPT 趋势"></canvas>
+      </div>
+      <div class="telemetry-foot">
+        <span>当前 TPS <b id="chart-tps">--</b></span>
+        <span>当前 MSPT <b id="chart-mspt">--</b></span>
+        <span>在线玩家 <b id="chart-players">--</b></span>
+      </div>
     </div>
 
     <div class="shell">
