@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ben12350.github.io/emerald-frontier-website/sitemap.xml
