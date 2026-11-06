@@ -303,8 +303,12 @@
         ui.offsiteBackupState.title = "尚未读取到 E 盘独立备份副本";
       } else {
         const replicas = Math.max(0, Number(offsite.replicas) || 0);
-        ui.offsiteBackupState.textContent = offsite.verified ? "已验证" : "待校验";
-        if (!offsite.verified) ui.offsiteBackupState.classList.add("is-offline");
+        ui.offsiteBackupState.textContent = offsite.stale
+          ? "巡检超时"
+          : offsite.verified ? "已验证" : "待校验";
+        if (!offsite.verified || offsite.stale) {
+          ui.offsiteBackupState.classList.add("is-offline");
+        }
         const sizeMb = (Number(offsite.bytes) || 0) / 1024 / 1024;
         const checksum = offsite.sha256
           ? `SHA-256 ${offsite.sha256.slice(0, 12)}…`
@@ -315,7 +319,8 @@
         );
         ui.offsiteBackupState.title =
           `${offsite.name} · ${sizeMb.toFixed(1)} MB · ${checksum} · ` +
-          `独立副本 ${replicas} 份 · 每 ${intervalMinutes} 分钟巡检`;
+          `独立副本 ${replicas} 份 · 每 ${intervalMinutes} 分钟巡检` +
+          (offsite.stale ? " · 状态已过期" : "");
       }
     }
   };
