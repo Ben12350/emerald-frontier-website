@@ -146,7 +146,10 @@
   const toneFor = (data) => {
     if (!data.online) return "offline";
     const state = String(data.state || "").toUpperCase();
-    return state === "ATTACK" || state === "LAG" ? "warning" : "online";
+    const warningStates = ["ATTACK", "DDOS", "SUSPECTED", "EMERGENCY", "LAG"];
+    return data.attackSuspected || warningStates.includes(state)
+      ? "warning"
+      : "online";
   };
 
   const setTone = (element, tone) => {
@@ -345,6 +348,7 @@
       online: Boolean(data.online),
       state: data.online ? "NORMAL" : "OFFLINE",
       statusText: data.online ? "运行中" : "未开放",
+      attackSuspected: false,
       onlinePlayers: Number(players.online ?? players.now) || 0,
       maxPlayers: Number(players.max) || 500,
       tps: null,
