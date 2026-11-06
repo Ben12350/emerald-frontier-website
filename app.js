@@ -306,7 +306,12 @@
           : "尚无校验文件";
         ui.backupAge.title =
           `${backup.name} · ${sizeMb.toFixed(1)} MB · ${checksum} · ` +
-          changed.toLocaleString("zh-CN", { hour12: false });
+          changed.toLocaleString("zh-CN", { hour12: false }) +
+          (data.lastBackupVerify?.archive === backup.name
+            ? ` · 恢复验证：${new Date(
+                data.lastBackupVerify.verifiedAt
+              ).toLocaleString("zh-CN", { hour12: false })}`
+            : " · 尚无恢复验证");
       }
     }
 
