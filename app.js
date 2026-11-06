@@ -27,6 +27,8 @@
     serverState: byId("server-state"),
     backupAge: byId("backup-age"),
     backupStat: byId("backup-stat"),
+    offsiteBackupState: byId("offsite-backup-state"),
+    offsiteBackupStat: byId("offsite-backup-stat"),
     telemetry: byId("telemetry"),
     perfChart: byId("perf-chart"),
     chartTps: byId("chart-tps"),
@@ -184,6 +186,10 @@
       ui.backupAge.textContent = "--";
       ui.backupAge.title = "正在读取最近备份";
     }
+    if (ui.offsiteBackupState) {
+      ui.offsiteBackupState.textContent = "--";
+      ui.offsiteBackupState.title = "正在读取异地独立副本";
+    }
     if (ui.playerCount) ui.playerCount.textContent = "-- / 500";
     if (ui.heroOnline) ui.heroOnline.textContent = "--";
   };
@@ -287,6 +293,27 @@
           changed.toLocaleString("zh-CN", { hour12: false });
       }
     }
+
+    if (ui.offsiteBackupState) {
+      ui.offsiteBackupState.classList.remove("is-warning", "is-offline");
+      const offsite = data.offsiteBackup;
+      if (!offsite?.available) {
+        ui.offsiteBackupState.textContent = "未同步";
+        ui.offsiteBackupState.classList.add("is-warning");
+        ui.offsiteBackupState.title = "尚未读取到 E 盘独立备份副本";
+      } else {
+        const replicas = Math.max(0, Number(offsite.replicas) || 0);
+        ui.offsiteBackupState.textContent = offsite.verified ? "已验证" : "待校验";
+        if (!offsite.verified) ui.offsiteBackupState.classList.add("is-offline");
+        const sizeMb = (Number(offsite.bytes) || 0) / 1024 / 1024;
+        const checksum = offsite.sha256
+          ? `SHA-256 ${offsite.sha256.slice(0, 12)}…`
+          : "尚无校验值";
+        ui.offsiteBackupState.title =
+          `${offsite.name} · ${sizeMb.toFixed(1)} MB · ${checksum} · ` +
+          `独立副本 ${replicas} 份`;
+      }
+    }
   };
 
   const normalizeStatus = (data) => {
@@ -301,6 +328,7 @@
       tps: null,
       mspt: null,
       lastBackup: null,
+      offsiteBackup: null,
       system: null,
       checkedAt: new Date().toISOString()
     };
@@ -369,6 +397,9 @@
 
   if (IS_GITHUB_PAGES && ui.backupStat) {
     ui.backupStat.hidden = true;
+  }
+  if (IS_GITHUB_PAGES && ui.offsiteBackupStat) {
+    ui.offsiteBackupStat.hidden = true;
   }
 
   const historyPoints = [];
