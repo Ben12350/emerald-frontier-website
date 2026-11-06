@@ -8,7 +8,8 @@
   const STATUS_ENDPOINTS = IS_GITHUB_PAGES
     ? [
         `https://api.mcstatus.io/v2/status/java/${PUBLIC_STATUS_HOST}`,
-        `https://api.mcsrvstat.us/3/${PUBLIC_STATUS_HOST}`
+        `https://api.mcsrvstat.us/3/${PUBLIC_STATUS_HOST}`,
+        `https://mcapi.us/server/status?ip=${PUBLIC_STATUS_HOST}&port=25565`
       ]
     : ["/api/status"];
   const byId = (id) => document.getElementById(id);
@@ -332,7 +333,7 @@
       online: Boolean(data.online),
       state: data.online ? "NORMAL" : "OFFLINE",
       statusText: data.online ? "运行中" : "未开放",
-      onlinePlayers: Number(players.online) || 0,
+      onlinePlayers: Number(players.online ?? players.now) || 0,
       maxPlayers: Number(players.max) || 500,
       tps: null,
       mspt: null,
